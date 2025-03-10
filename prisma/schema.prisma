@@ -1,0 +1,419 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Définit si le seuil est journalier, hebdomadaire ou mensuel
+enum KpiThresholdScope {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+  GLOBAL
+}
+
+// Définit si le seuil s'applique à un utilisateur ou à une équipe
+enum KpiThresholdTargetType {
+  INDIVIDUAL
+  TEAM
+}
+
+model Setting {
+  id           Int      @id @default(autoincrement())
+  primaryColor String   @db.VarChar(255)
+  companyName  String   @db.VarChar(255)
+  companyLogo  String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Profil utilisateur
+model Profile {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique @db.VarChar(255)
+  label           String           @db.VarChar(255)
+  value           String           @db.VarChar(255)
+  description     String           @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  users           User[]
+  formPermissions FormPermission[]
+}
+
+// Utilisateur
+model User {
+  id               Int                @id @default(autoincrement())
+  code             String             @unique @db.VarChar(255)
+  lastname         String             @db.VarChar(255)
+  firstname        String             @db.VarChar(255)
+  email            String             @unique @db.VarChar(255)
+  phone            String?            @db.VarChar(255)
+  password         String             @db.Text
+  isActive         Boolean            @default(true)
+  isDeleted        Boolean            @default(false)
+  isNeedChangePass Boolean            @default(false)
+  profilePicture   String?            @db.Text
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?          @db.DateTime
+  profileId        Int
+  profile          Profile            @relation(fields: [profileId], references: [id])
+  userLoginHistory UserLoginHistory[]
+  logs             UserLog[]
+  teams            TeamUser[]
+  dataRows         DataRow[]
+  kpis             UserKpi[]
+  activities       ActivityUser[]
+  reports          Report[]
+}
+
+// Historique de connexion
+model UserLoginHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  loginDate DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// Log utilisateur
+model UserLog {
+  id     Int      @id @default(autoincrement())
+  userId Int
+  makeBy Int
+  action String   @db.VarChar(255)
+  date   DateTime @default(now())
+  user   User     @relation(fields: [userId], references: [id])
+}
+
+model Report {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique @db.VarChar(255)
+  startDate   DateTime
+  endDate     DateTime
+  delivered   Boolean   @default(false)
+  activityId  Int
+  creatorId   Int
+  updatedAt   DateTime  @updatedAt
+  deliveredAt DateTime?
+  activity    Activity  @relation(fields: [activityId], references: [id])
+  creator     User      @relation(fields: [creatorId], references: [id])
+}
+
+// Équipe
+model Team {
+  id            Int                @id @default(autoincrement())
+  code          String             @unique @db.VarChar(255)
+  name          String             @db.VarChar(255)
+  isActive      Boolean            @default(true)
+  isDeleted     Boolean            @default(false)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  deletedAt     DateTime?          @db.DateTime
+  users         TeamUser[]
+  activities    ActivityTeam[]
+  objectiveKpis TeamObjectiveKpi[]
+  resultKpis    TeamResultKpi[]
+  areas         ActivityTeamArea[]
+}
+
+// Lien entre équipe et utilisateur
+model TeamUser {
+  teamId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  team      Team     @relation(fields: [teamId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@id([teamId, userId])
+  @@unique([teamId, userId])
+}
+
+// Seuils pour les KPIs
+model KpiThreshold {
+  id         Int    @id @default(autoincrement())
+  kpiId      Int
+  scope      String @db.VarChar(255) // Portée du seuil (journalier, hebdomadaire, mensuel)
+  targetType String @db.VarChar(255) // Type de cible (individuel ou équipe)
+
+  value     Float
+  reward    String?  @db.VarChar(255) // Optionnel, type de récompense
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  kpi Kpi @relation(fields: [kpiId], references: [id])
+
+  @@unique([kpiId, scope, targetType]) // Empêche plusieurs seuils pour un KPI/scope/type
+}
+
+// Indicateur de performance
+model Kpi {
+  id             Int                   @id @default(autoincrement())
+  code           String                @unique @db.VarChar(255)
+  name           String                @db.VarChar(255)
+  slug           String                @db.VarChar(255)
+  type           String                @db.VarChar(255)
+  value          Float                 @default(0)
+  description    String?               @db.Text
+  activityId     Int
+  isActive       Boolean               @default(true)
+  isDeleted      Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?             @db.DateTime
+  activity       Activity              @relation(fields: [activityId], references: [id])
+  objectiveTeams TeamObjectiveKpi[]
+  resultTeams    TeamResultKpi[]
+  users          UserKpi[]
+  thresholds     KpiThreshold[]
+  objectiveLinks ObjectiveResultLink[] @relation("ObjectiveToResult")
+  resultLinks    ObjectiveResultLink[] @relation("ResultToObjectives")
+}
+
+// Liaison entre KPI Objectif et KPI Résultat
+model ObjectiveResultLink {
+  id          Int      @id @default(autoincrement())
+  objectiveId Int
+  resultId    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  objective   Kpi      @relation("ObjectiveToResult", fields: [objectiveId], references: [id])
+  result      Kpi      @relation("ResultToObjectives", fields: [resultId], references: [id])
+
+  @@unique([objectiveId, resultId])
+}
+
+// KPI par utilisateur et par activité
+model UserKpi {
+  userId    Int
+  kpiId     Int
+  value     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  kpi       Kpi      @relation(fields: [kpiId], references: [id])
+
+  @@id([userId, kpiId])
+  @@unique([userId, kpiId])
+}
+
+// KPI objectif par équipe
+model TeamObjectiveKpi {
+  teamId    Int
+  kpiId     Int
+  value     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  team      Team     @relation(fields: [teamId], references: [id])
+  kpi       Kpi      @relation(fields: [kpiId], references: [id])
+
+  @@id([teamId, kpiId])
+  @@unique([teamId, kpiId])
+}
+
+// KPI result par équipe
+model TeamResultKpi {
+  id        Int      @id @default(autoincrement())
+  teamId    Int
+  kpiId     Int
+  value     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  team      Team     @relation(fields: [teamId], references: [id])
+  kpi       Kpi      @relation(fields: [kpiId], references: [id])
+}
+
+// Type d'activité
+model ActivityType {
+  id          Int        @id @default(autoincrement())
+  code        String     @unique @db.VarChar(255)
+  label       String     @db.VarChar(255)
+  value       String     @db.VarChar(255)
+  description String?    @db.Text
+  status      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?  @db.DateTime
+  Activity    Activity[]
+}
+
+// Activité
+model Activity {
+  id             Int                @id @default(autoincrement())
+  formId         Int?
+  activityTypeId Int?
+  code           String             @unique @db.VarChar(255)
+  name           String             @db.VarChar(255)
+  description    String             @db.Text
+  duplicatedFrom Int?               @default(0)
+  isActive       Boolean            @default(true)
+  isDeleted      Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  deletedAt      DateTime?          @db.DateTime
+  form           Form?              @relation(fields: [formId], references: [id])
+  type           ActivityType?      @relation(fields: [activityTypeId], references: [id])
+  kpis           Kpi[]
+  teams          ActivityTeam[]
+  areas          ActivityTeamArea[]
+  ActivityUser   ActivityUser[]
+  Report         Report[]
+}
+
+model ActivityUser {
+  activityId Int
+  userId     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  activity   Activity @relation(fields: [activityId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@id([activityId, userId])
+  @@unique([activityId, userId])
+}
+
+// une activité peut être liée à plusieurs équipes
+model ActivityTeam {
+  activityId Int
+  teamId     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  activity   Activity @relation(fields: [activityId], references: [id])
+  team       Team     @relation(fields: [teamId], references: [id])
+
+  @@id([activityId, teamId])
+  @@unique([activityId, teamId])
+}
+
+// Zone géographique par équipe pour une activité donnée
+model ActivityTeamArea {
+  activityId Int
+  areaId     Int
+  teamId     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  activity   Activity @relation(fields: [activityId], references: [id])
+  area       Area     @relation(fields: [areaId], references: [id])
+  team       Team     @relation(fields: [teamId], references: [id])
+
+  @@id([activityId, areaId, teamId])
+  @@unique([activityId, areaId, teamId])
+}
+
+// Zone géographique
+model Area {
+  id               Int                @id @default(autoincrement())
+  code             String             @unique @db.VarChar(255)
+  name             String             @db.VarChar(255)
+  value            String             @db.VarChar(255)
+  description      String?            @db.Text
+  isActive         Boolean            @default(true)
+  isDeleted        Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?          @db.DateTime
+  ActivityTeamArea ActivityTeamArea[]
+}
+
+// Formulaire
+model Form {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique @db.VarChar(255)
+  name            String           @db.VarChar(255)
+  description     String           @db.Text
+  duplicatedFrom  Int?             @default(0)
+  uuid            String           @db.VarChar(255)
+  isActive        Boolean          @default(true)
+  isDeleted       Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?        @db.DateTime
+  fields          Field[]
+  formPermissions FormPermission[]
+  activities      Activity[]
+}
+
+// Permission sur un formulaire pour un profil donné
+model FormPermission {
+  formId    Int
+  profileId Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  form      Form     @relation(fields: [formId], references: [id])
+  profile   Profile  @relation(fields: [profileId], references: [id])
+
+  @@id([formId, profileId])
+  @@unique([formId, profileId])
+}
+
+// Type de champ
+model FieldType {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(255)
+  label       String   @db.VarChar(255)
+  value       String   @db.VarChar(255)
+  description String?  @db.Text
+  status      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  fields      Field[]
+}
+
+// Champ de formulaire
+model Field {
+  id           Int         @id @default(autoincrement())
+  formId       Int
+  code         String      @unique @db.VarChar(255)
+  label        String      @db.VarChar(255)
+  slug         String      @db.VarChar(255)
+  uuid         String      @db.VarChar(255)
+  description  String      @db.Text
+  optional     Boolean     @default(false)
+  defaultValue String?     @db.Text
+  exampleValue String?     @db.Text
+  selectValues String?     @db.Text
+  fieldTypeId  Int
+  isActive     Boolean     @default(true)
+  isDeleted    Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?   @db.DateTime
+  type         FieldType   @relation(fields: [fieldTypeId], references: [id])
+  form         Form        @relation(fields: [formId], references: [id])
+  dataRows     DataRow[]
+  ranks        FieldRank[]
+}
+
+// Ordre des champs dans un formulaire
+model FieldRank {
+  id        Int      @id @default(autoincrement())
+  fieldId   Int
+  rank      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  field     Field    @relation(fields: [fieldId], references: [id])
+}
+
+// Données d'un formulaire
+model DataRow {
+  id          Int      @id @default(autoincrement())
+  sessionUuid String   @db.VarChar(255)
+  fieldId     Int
+  userId      Int
+  value       String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  field       Field    @relation(fields: [fieldId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+}

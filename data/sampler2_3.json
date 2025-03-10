@@ -1,0 +1,19 @@
+{
+    "message": "Utilisateur cr\u00e9\u00e9 avec succ\u00e8s",
+    "data": {
+        "id": 25,
+        "code": "USR25030501_4954_7262",
+        "lastname": "unhardenable",
+        "firstname": "democracy",
+        "email": "democracy.unhardenable@activflow.com",
+        "phone": "7412229143",
+        "isActive": true,
+        "isDeleted": false,
+        "isNeedChangePass": false,
+        "profilePicture": null,
+        "createdAt": "2025-03-05T01:49:54.260Z",
+        "updatedAt": "2025-03-05T01:49:54.260Z",
+        "deletedAt": null,
+        "profileId": 3
+    }
+}

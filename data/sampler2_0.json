@@ -1,0 +1,19 @@
+{
+    "message": "Utilisateur cr\u00e9\u00e9 avec succ\u00e8s",
+    "data": {
+        "id": 16,
+        "code": "USR25030501_4944_8163",
+        "lastname": "bagattini",
+        "firstname": "armgaunt",
+        "email": "armgaunt.bagattini@activflow.com",
+        "phone": "4261185507",
+        "isActive": true,
+        "isDeleted": false,
+        "isNeedChangePass": false,
+        "profilePicture": null,
+        "createdAt": "2025-03-05T01:49:44.931Z",
+        "updatedAt": "2025-03-05T01:49:44.931Z",
+        "deletedAt": null,
+        "profileId": 3
+    }
+}

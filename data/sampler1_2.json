@@ -1,0 +1,19 @@
+{
+    "message": "Utilisateur cr\u00e9\u00e9 avec succ\u00e8s",
+    "data": {
+        "id": 21,
+        "code": "USR25030501_4950_4226",
+        "lastname": "slaunchways",
+        "firstname": "procreation",
+        "email": "procreation.slaunchways@activflow.com",
+        "phone": "1678528152",
+        "isActive": true,
+        "isDeleted": false,
+        "isNeedChangePass": false,
+        "profilePicture": null,
+        "createdAt": "2025-03-05T01:49:50.270Z",
+        "updatedAt": "2025-03-05T01:49:50.270Z",
+        "deletedAt": null,
+        "profileId": 3
+    }
+}

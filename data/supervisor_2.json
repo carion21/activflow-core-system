@@ -1,0 +1,19 @@
+{
+    "message": "Utilisateur cr\u00e9\u00e9 avec succ\u00e8s",
+    "data": {
+        "id": 20,
+        "code": "USR25030501_4949_4134",
+        "lastname": "sulu",
+        "firstname": "lezghian",
+        "email": "lezghian.sulu@activflow.com",
+        "phone": "3120755645",
+        "isActive": true,
+        "isDeleted": false,
+        "isNeedChangePass": false,
+        "profilePicture": null,
+        "createdAt": "2025-03-05T01:49:49.011Z",
+        "updatedAt": "2025-03-05T01:49:49.011Z",
+        "deletedAt": null,
+        "profileId": 2
+    }
+}

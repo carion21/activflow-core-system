@@ -1,0 +1,13 @@
+{
+    "message": "\u00c9quipe cr\u00e9\u00e9e avec succ\u00e8s",
+    "data": {
+        "id": 6,
+        "code": "TEM25030501_4948_8179",
+        "name": "bombing",
+        "isActive": true,
+        "isDeleted": false,
+        "createdAt": "2025-03-05T01:49:48.786Z",
+        "updatedAt": "2025-03-05T01:49:48.786Z",
+        "deletedAt": null
+    }
+}

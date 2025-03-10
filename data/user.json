@@ -1,0 +1,19 @@
+{
+    "message": "Utilisateur cr\u00e9\u00e9 avec succ\u00e8s",
+    "data": {
+        "id": 17,
+        "code": "USR021222_2540_6240",
+        "lastname": "barger",
+        "firstname": "cremains",
+        "email": "cremains.barger@activflow.com",
+        "phone": "9623094065",
+        "isActive": true,
+        "isDeleted": false,
+        "isNeedChangePass": true,
+        "profilePicture": null,
+        "createdAt": "2025-02-12T22:25:40.840Z",
+        "updatedAt": "2025-02-12T22:25:40.840Z",
+        "deletedAt": null,
+        "profileId": 2
+    }
+}

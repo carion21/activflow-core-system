@@ -1,0 +1,13 @@
+{
+    "message": "\u00c9quipe cr\u00e9\u00e9e avec succ\u00e8s",
+    "data": {
+        "id": 5,
+        "code": "TEM25030501_4945_6097",
+        "name": "overprints",
+        "isActive": true,
+        "isDeleted": false,
+        "createdAt": "2025-03-05T01:49:45.695Z",
+        "updatedAt": "2025-03-05T01:49:45.695Z",
+        "deletedAt": null
+    }
+}
