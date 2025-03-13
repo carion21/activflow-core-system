@@ -18,6 +18,7 @@ import { Request } from 'express';
 import { applyRbac } from 'src/common/functions';
 import { SaveInStoreDto } from './dto/save-in-store.dto';
 import { ShowDataForAdminDto } from './dto/show-data-for-admin.dto';
+import { ShowDataForRunnerDto } from './dto/show-data-for-runner.dto';
 
 @ApiTags('Gestion du stockage des données')
 @ApiBearerAuth()
@@ -32,9 +33,20 @@ export class StoreController {
     @Req() request: Request,
   ) {
     let userAuthenticated = request['user'];
-    applyRbac(userAuthenticated, 'store_show');
+    applyRbac(userAuthenticated, 'store_show_for_admin');
 
     return this.storeService.showForAdmin(showDataForAdminDto, userAuthenticated);
+  }
+
+  @Post('for-runner')
+  showForRunner(
+    @Body() showDataForRunnerDto: ShowDataForRunnerDto,
+    @Req() request: Request,
+  ) {
+    let userAuthenticated = request['user'];
+    applyRbac(userAuthenticated, 'store_show_for_runner');
+
+    return this.storeService.showForRunner(showDataForRunnerDto, userAuthenticated);
   }
 
   @Post()

@@ -7,6 +7,7 @@ import { Request } from 'express';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { applyRbac } from 'src/common/functions';
+import { ChangeResetPasswordDto } from './dto/change-reset-password.dto';
 
 @ApiTags('Authentification')
 @Controller('auth')
@@ -18,15 +19,28 @@ export class AuthController {
     return this.authService.signIn(signInDto);
   }
 
+  @Post('change-reset-password')
+  async changeResetPassword(
+    @Body() changeResetPasswordDto: ChangeResetPasswordDto,
+  ) {
+    return this.authService.changeResetPassword(changeResetPasswordDto);
+  }
+
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Post('change-password')
-  async changePassword(@Body() changePasswordDto: ChangePasswordDto, @Req() request: Request) {
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Req() request: Request,
+  ) {
     let userAuthenticated = request['user'];
     applyRbac(userAuthenticated, 'change_password');
     let userId = userAuthenticated['id'];
 
-    return this.authService.changePassword(changePasswordDto, userAuthenticated);
+    return this.authService.changePassword(
+      changePasswordDto,
+      userAuthenticated,
+    );
   }
 
   @Post('forgot-password')

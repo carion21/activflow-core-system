@@ -22,7 +22,8 @@ export class SettingService {
   }
 
   async update(updateSettingDto: UpdateSettingDto) {
-    const { primaryColor, companyName, companyLogo } = updateSettingDto;
+    const { primaryColor, companyName, companyEmail, companyLogo } =
+      updateSettingDto;
 
     const setting = await this.prismaService.setting.findFirst();
     if (!setting)
@@ -31,7 +32,7 @@ export class SettingService {
     // update the setting
     const updatedSetting = await this.prismaService.setting.update({
       where: { id: setting.id },
-      data: { primaryColor, companyName, companyLogo },
+      data: { primaryColor, companyName, companyEmail, companyLogo },
     });
 
     // return the response

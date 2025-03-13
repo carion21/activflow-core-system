@@ -178,7 +178,21 @@ export class ActivityService {
     };
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(paginationDto: PaginationDto, userAuthenticated: object) {
+    const isAnViewer = userAuthenticated['profile']['value'] === Consts.VIEWER_PROFILE;
+    let activityIds = [];
+    if (isAnViewer) {
+      const userActivities = await this.prismaService.activityUser.findMany({
+        where: {
+          userId: userAuthenticated['id'],
+        },
+        select: {
+          activityId: true,
+        },
+      });
+      activityIds = userActivities.map((activity) => activity.activityId);
+    }
+
     // Retrieve all activities
     const options = {
       include: {
@@ -221,6 +235,11 @@ export class ActivityService {
       },
       where: {
         isDeleted: false,
+        ...(isAnViewer && {
+          id: {
+            in: activityIds,
+          },
+        }),
       },
       orderBy: {
         createdAt: 'desc',
@@ -248,7 +267,21 @@ export class ActivityService {
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, userAuthenticated: object) {
+    const isAnViewer = userAuthenticated['profile']['value'] === Consts.VIEWER_PROFILE;
+    let activityIds = [];
+    if (isAnViewer) {
+      const userActivities = await this.prismaService.activityUser.findMany({
+        where: {
+          userId: userAuthenticated['id'],
+        },
+        select: {
+          activityId: true,
+        },
+      });
+      activityIds = userActivities.map((activity) => activity.activityId);
+    }
+
     // Récupérer l'Activité avec ses entités associées
     const activity = await this.prismaService.activity.findUnique({
       include: {
@@ -260,6 +293,11 @@ export class ActivityService {
             uuid: true,
             isActive: true,
             description: true,
+            fields: {
+              select: {
+                id: true,
+              },
+            },
           },
         },
         teams: {
@@ -313,7 +351,7 @@ export class ActivityService {
         isDeleted: false,
       },
     });
-    if (!activity)
+    if (!activity || (isAnViewer && !activityIds.includes(activity.id)))
       throw new NotFoundException(translate('Activité introuvable'));
 
     let teams = [];
@@ -343,6 +381,9 @@ export class ActivityService {
           where: {
             userId: {
               in: userIds,
+            },
+            fieldId: {
+              in: activity.form.fields.map((f) => f.id),
             },
           },
           distinct: ['sessionUuid'], // distinct sur sessionUuid

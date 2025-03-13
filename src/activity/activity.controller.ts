@@ -111,7 +111,7 @@ export class ActivityController {
     let userAuthenticated = request['user'];
     applyRbac(userAuthenticated, 'activity_find_all');
 
-    return this.activityService.findAll(paginationDto);
+    return this.activityService.findAll(paginationDto, userAuthenticated);
   }
 
   @Get('duplicate/:id')
@@ -127,7 +127,7 @@ export class ActivityController {
     let userAuthenticated = request['user'];
     applyRbac(userAuthenticated, 'activity_find_one');
 
-    return this.activityService.findOne(+id);
+    return this.activityService.findOne(+id, userAuthenticated);
   }
 
   @Patch('change-status/:id')

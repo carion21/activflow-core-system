@@ -17,12 +17,14 @@ export class Consts {
 
   static DEFAULT_SETTING_PRIMARY_COLOR: string = '#6366f1';
   static DEFAULT_SETTING_COMPANY_NAME: string = 'ActivFlow';
+  static DEFAULT_SETTING_COMPANY_EMAIL: string = 'support@activflow.com';
   static DEFAULT_SETTING_COMPANY_LOGO: string = '';
 
   static ADMIN_PROFILE: string = 'admin';
   static SUPERVISOR_PROFILE: string = 'supervisor';
   static SAMPLER_PROFILE: string = 'sampler';
   static VIEWER_PROFILE: string = 'viewer';
+  static RUNNER_PROFILE: string = 'runner';
 
   static PROFILES: object[] = [
     {
@@ -45,13 +47,27 @@ export class Consts {
       value: 'viewer',
       description: "Il s'agit du profil Viewer",
     },
+    {
+      label: 'Runner',
+      value: 'runner',
+      description: "Il s'agit du profil Runner",
+    },
   ];
 
   static DEFAULT_USERS: any[] = [
     {
+      role: 'admin',
       lastname: 'admin',
       firstname: 'ActivFlow',
       email: 'admin@activflow.com',
+      phone: '00000000',
+      username: 'admin@activflow.com',
+    },
+    {
+      role: 'runner',
+      lastname: 'reporter',
+      firstname: 'ActivFlow',
+      email: 'reporter@activflow.com',
       phone: '00000000',
       username: 'admin@activflow.com',
     },
@@ -207,6 +223,8 @@ export class Consts {
 
   static ROLES: object = {
     admin: [
+      'dashboard_admin',
+
       'change_password',
       'profile_find_all',
       'field_type_find_all',
@@ -218,11 +236,13 @@ export class Consts {
       'user_find_me',
       'user_update',
       'user_update_password',
+      'user_reset_password',
       'user_change_status',
       'user_delete',
       'user_authorize_activity',
 
       'kpi_link',
+      'kpi_unlink',
       'kpi_create',
       'kpi_find_all',
       'kpi_find_all_by_activity',
@@ -276,6 +296,7 @@ export class Consts {
       'store_show',
       'store_list_session',
       'store_show_session',
+      'store_show_for_admin',
     ],
     supervisor: [
       'change_password',
@@ -304,6 +325,32 @@ export class Consts {
       'store_show_session',
       'form_find_one',
     ],
-    viewer: ['change_password', 'user_find_me'],
+    viewer: [
+      'dashboard_viewer',
+
+      'change_password',
+      'user_find_me',
+      'user_update',
+      'user_update_password',
+
+      'area_get_activity_team_areas',
+      'area_find_all',
+
+      'activity_dashboard',
+      'activity_find_all',
+      'activity_search',
+      'activity_find_one',
+
+      'kpi_find_all',
+      'kpi_search',
+      'kpi_find_one',
+
+      'report_search',
+      'report_create',
+      'report_find_all',
+
+      'store_show',
+    ],
+    runner: ['report_find_all', 'report_deliver', 'store_show_for_runner'],
   };
 }

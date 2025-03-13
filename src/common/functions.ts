@@ -117,6 +117,10 @@ const genAreaCode = () => {
   return generateCode('ARE');
 };
 
+const genReportCode = () => {
+  return generateCode('RPT');
+}
+
 const getUiAvatar = (user: Object) => {
   const configService = new ConfigService();
   let uname = user['firstname'] + ' ' + user['lastname'];
@@ -574,6 +578,7 @@ const listmonkSendEmail = async (
     if (rListmonkEmail.success) {
       result.success = true;
       result.data = rListmonkEmail.data;
+      console.log('Email sent successfully');
     } else {
       result.message = `Erreur lors de l'envoi de l'email via Listmonk: ${rListmonkEmail.message}`;
     }
@@ -600,6 +605,7 @@ export {
   genFieldTypeCode,
   genFieldCode,
   genAreaCode,
+  genReportCode,
   getUiAvatar,
   applyRbac,
   controlData,

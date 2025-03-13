@@ -130,10 +130,31 @@ export class KpiService {
     };
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(paginationDto: PaginationDto, userAuthenticated: object) {
+    const isAnViewer = userAuthenticated['profile']['value'] === Consts.VIEWER_PROFILE;
+    let activityIds = [];
+    if (isAnViewer) {
+      const userActivities = await this.prismaService.activityUser.findMany({
+        where: {
+          userId: userAuthenticated['id'],
+        },
+        select: {
+          activityId: true,
+        },
+      });
+      activityIds = userActivities.map((activity) => activity.activityId);
+    }
+
     const options = {
       include: {
         activity: true,
+      },
+      where: {
+        ...(isAnViewer && {
+          activityId: {
+            in: activityIds,
+          },
+        }),
       },
     };
 
@@ -182,10 +203,29 @@ export class KpiService {
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, userAuthenticated: object) {
+    const isAnViewer = userAuthenticated['profile']['value'] === Consts.VIEWER_PROFILE;
+    let activityIds = [];
+    if (isAnViewer) {
+      const userActivities = await this.prismaService.activityUser.findMany({
+        where: {
+          userId: userAuthenticated['id'],
+        },
+        select: {
+          activityId: true,
+        },
+      });
+      activityIds = userActivities.map((activity) => activity.activityId);
+    }
+
     const kpi = await this.prismaService.kpi.findUnique({
       where: {
         id,
+        ...(isAnViewer && {
+          activityId: {
+            in: activityIds,
+          },
+        }),
       },
       include: {
         activity: true,
@@ -718,6 +758,29 @@ export class KpiService {
     return {
       message: translate('KPIs liés avec succès'),
       data: link,
+    };
+  }
+
+  async unlink(id: number, userAuthenticated: any) {
+    // Retrieve the kpi
+    const kpi = await this.prismaService.kpi.findUnique({
+      where: {
+        id,
+        isDeleted: false,
+      },
+    });
+    if (!kpi) throw new NotFoundException(translate("Ce KPI n'existe pas"));
+
+    // Remove the link
+    await this.prismaService.objectiveResultLink.deleteMany({
+      where: {
+        resultId: id,
+      },
+    });
+
+    // Return the response
+    return {
+      message: translate('Lien KPIs supprimé avec succès'),
     };
   }
 }

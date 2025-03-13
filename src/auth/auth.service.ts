@@ -21,6 +21,8 @@ import {
 } from 'src/common/functions';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ChangeResetPasswordDto } from './dto/change-reset-password.dto';
+import { Consts } from 'src/common/constants';
 
 @Injectable()
 export class AuthService {
@@ -137,10 +139,103 @@ export class AuthService {
         translate("Erreur lors de la mise à jour de l'utilisateur"),
       );
 
+    const setting = await this.prismaService.setting.findFirst();
+    if (!setting)
+      throw new NotFoundException(translate('Paramètres introuvables'));
+
     // send email
     const emailTemplateId = 5;
     const emailData = {
       login_url: this.configService.get('BUILDER_BASE_URL') + '/security/login',
+      support_email: setting.companyEmail,
+      company_name: setting.companyName,
+    };
+    const listmonkEmail = await listmonkSendEmail(
+      user,
+      emailTemplateId,
+      emailData,
+    );
+    console.log('listmonkEmail', listmonkEmail);
+
+    // Return the response
+    return {
+      message: translate('Mot de passe modifié avec succès'),
+    };
+  }
+
+  async changeResetPassword(changeResetPasswordDto: ChangeResetPasswordDto) {
+    const { email, oldPassword, newPassword } = changeResetPasswordDto;
+
+    // password must be different from the old password and must be at least 8 characters
+    // if (newPassword.length < 8)
+    if (!isValidPassword(newPassword))
+      throw new BadRequestException(
+        translate(
+          'Le mot de passe doit contenir au moins 8 caractères, au moins deux chiffres, aucun caractère spécial et aucune espace',
+        ),
+      );
+
+    // retrieve the user
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email,
+        isNeedChangePass: true,
+        isDeleted: false,
+      },
+      include: {
+        profile: true,
+      },
+    });
+    if (!user) throw new NotFoundException(translate('Utilisateur non trouvé'));
+
+    // Verify if the old password is correct
+    const match = await bcrypt.compare(oldPassword, user.password);
+    if (!match)
+      throw new UnauthorizedException(translate('Mot de passe incorrect'));
+
+    if (oldPassword === newPassword)
+      throw new BadRequestException(
+        translate("Le nouveau mot de passe doit être différent de l'ancien"),
+      );
+
+    // hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // update the user with the new password
+    const updatedUser = await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedPassword,
+        isNeedChangePass: false,
+      },
+    });
+    if (!updatedUser)
+      throw new InternalServerErrorException(
+        translate("Erreur lors de la mise à jour de l'utilisateur"),
+      );
+
+    const setting = await this.prismaService.setting.findFirst();
+    if (!setting)
+      throw new NotFoundException(translate('Paramètres introuvables'));
+
+    const isAnAdminOrViewer = [
+      Consts.ADMIN_PROFILE,
+      Consts.VIEWER_PROFILE,
+    ].includes(user.profile.value);
+
+    let baseUrl = this.configService.get('BUILDER_BASE_URL');
+    if (isAnAdminOrViewer) {
+      baseUrl = this.configService.get('ADMINER_BASE_URL');
+    }
+
+    // send email
+    const emailTemplateId = 5;
+    const emailData = {
+      login_url: baseUrl + '/security/login',
+      support_email: setting.companyEmail,
+      company_name: setting.companyName,
     };
     const listmonkEmail = await listmonkSendEmail(
       user,

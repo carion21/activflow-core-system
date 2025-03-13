@@ -24,6 +24,7 @@ import { SharedService } from 'src/shared/shared.service';
 import { SearchUserDto } from './dto/search-user.dto';
 import { Consts } from 'src/common/constants';
 import { AuthorizeActivityDto } from './dto/authorize-activity.dto';
+import { profile } from 'console';
 
 @Injectable()
 export class UserService {
@@ -72,13 +73,28 @@ export class UserService {
         translate("Erreur lors de la création de l'utilisateur"),
       );
 
+    const setting = await this.prismaService.setting.findFirst();
+    if (!setting)
+      throw new NotFoundException(translate('Paramètres introuvables'));
+
+    const isAnAdminOrViewer = [Consts.ADMIN_PROFILE, Consts.VIEWER_PROFILE].includes(
+      profile.value,
+    );
+
+    let baseUrl = this.configService.get('BUILDER_BASE_URL');
+    if (isAnAdminOrViewer) {
+      baseUrl = this.configService.get('ADMINER_BASE_URL');
+    }
+
     // send email
     const emailTemplateId = 4;
     const emailData = {
       email: user.email,
       profile: profile.label.toUpperCase(),
       temp_password: tempPassword,
-      login_url: this.configService.get('BUILDER_BASE_URL') + '/security/login',
+      login_url: baseUrl + '/security/login',
+      support_email: setting.companyEmail,
+      company_name: setting.companyName,
     };
     const listmonkEmail = await listmonkSendEmail(
       user,
@@ -168,6 +184,11 @@ export class UserService {
       where: {
         id: {
           not: userAuthenticated['id'],
+        },
+        profile: {
+          value: {
+            notIn: [Consts.RUNNER_PROFILE],
+          },
         },
         isDeleted: false,
       },
@@ -498,6 +519,77 @@ export class UserService {
     // Return the response
     return {
       message: translate('Activités autorisées avec succès'),
+    };
+  }
+
+  async resetPassword(id: number, userAuthenticated: any) {
+    // retrieve the user
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        id: id,
+      },
+      include: {
+        profile: {
+          select: {
+            value: true,
+          },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException(translate('Utilisateur non trouvé'));
+
+    // generate a new password
+    const tempPassword = generatePassword();
+    // hash the new password
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // update the user with the new password
+    const updatedUser = await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedPassword,
+        isNeedChangePass: true,
+      },
+    });
+    if (!updatedUser)
+      throw new InternalServerErrorException(
+        translate("Erreur lors de la mise à jour de l'utilisateur"),
+      );
+
+    const setting = await this.prismaService.setting.findFirst();
+    if (!setting)
+      throw new NotFoundException(translate('Paramètres introuvables'));
+
+    const isAnAdminOrViewer = [Consts.ADMIN_PROFILE, Consts.VIEWER_PROFILE].includes(
+      user.profile.value,
+    );
+
+    let baseUrl = this.configService.get('BUILDER_BASE_URL');
+    if (isAnAdminOrViewer) {
+      baseUrl = this.configService.get('ADMINER_BASE_URL');
+    }
+
+    // send email
+    const emailTemplateId = 6;
+    const emailData = {
+      email: user.email,
+      temp_password: tempPassword,
+      login_url: baseUrl + '/security/login',
+      support_email: setting.companyEmail,
+      company_name: setting.companyName,
+    };
+    const listmonkEmail = await listmonkSendEmail(
+      user,
+      emailTemplateId,
+      emailData,
+    );
+    console.log('listmonkEmail', listmonkEmail);
+
+    // Return the response
+    return {
+      message: translate('Mot de passe modifié avec succès'),
     };
   }
 }

@@ -3,7 +3,11 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { Consts } from 'src/common/constants';
-import { genFieldTypeCode, genProfileCode, genUserCode } from 'src/common/functions';
+import {
+  genFieldTypeCode,
+  genProfileCode,
+  genUserCode,
+} from 'src/common/functions';
 
 const prisma = new PrismaClient();
 const configService = new ConfigService();
@@ -13,6 +17,7 @@ async function main() {
     data: {
       primaryColor: Consts.DEFAULT_SETTING_PRIMARY_COLOR,
       companyName: Consts.DEFAULT_SETTING_COMPANY_NAME,
+      companyEmail: Consts.DEFAULT_SETTING_COMPANY_EMAIL,
       companyLogo: Consts.DEFAULT_SETTING_COMPANY_LOGO,
     },
   });
@@ -47,29 +52,41 @@ async function main() {
   });
   console.log('Profiles created');
 
-  const admin_profile = await prisma.profile.findFirst({
+  const profiles = await prisma.profile.findMany({
     where: {
-      value: Consts.ADMIN_PROFILE,
+      value: {
+        in: Consts.PROFILES.map((profile) => profile['value']),
+      },
     },
   });
-  let profileId = admin_profile['id'];
-  console.log('Profile Admin found');
+  console.log('Profiles found');
 
-  Consts.DEFAULT_USERS.forEach(async (user) => {
-    const password =
-      configService.get<string>('DEFAULT_PASSWORD') || 'password';
-    const hash = await bcrypt.hash(password, 10);
-    await prisma.user.create({
-      data: {
-        code: genUserCode(),
-        lastname: user['lastname'],
-        firstname: user['firstname'],
-        email: user['email'],
-        phone: user['phone'],
-        profileId: profileId,
-        password: hash,
-      },
-    });
+  const userDatas = Consts.DEFAULT_USERS.map((user) => {
+    let profileId = profiles.find(
+      (profile) => profile.value === user['role'],
+    ).id;
+    let password = '';
+    if (user['role'] === 'admin') {
+      password =
+        configService.get<string>('DEFAULT_ADMIN_PASSWORD') || 'password123';
+    }
+    if (user['role'] === 'runner') {
+      password =
+        configService.get<string>('DEFAULT_RUNNER_PASSWORD') || 'password123';
+    }
+    const hash = bcrypt.hashSync(password, 10);
+    return {
+      code: genUserCode(),
+      lastname: user['lastname'],
+      firstname: user['firstname'],
+      email: user['email'],
+      phone: user['phone'],
+      profileId: profileId,
+      password: hash,
+    };
+  });
+  await prisma.user.createMany({
+    data: userDatas,
   });
   console.log('Users created');
 }

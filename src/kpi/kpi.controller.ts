@@ -36,6 +36,14 @@ export class KpiController {
     return this.kpiService.link(linkKpiDto, userAuthenticated);
   }
 
+  @Get('unlink/:id')
+  unlink(@Param('id') id: string, @Req() request: Request) {
+    let userAuthenticated = request['user'];
+    applyRbac(userAuthenticated, 'kpi_unlink');
+
+    return this.kpiService.unlink(+id, userAuthenticated);
+  }
+
   @Post('search')
   search(@Body() searchKpiDto: SearchKpiDto, @Req() request: Request) {
     let userAuthenticated = request['user'];
@@ -90,7 +98,7 @@ export class KpiController {
     let userAuthenticated = request['user'];
     applyRbac(userAuthenticated, 'kpi_find_all');
 
-    return this.kpiService.findAll(paginationDto);
+    return this.kpiService.findAll(paginationDto, userAuthenticated);
   }
 
   @Get(':id')
@@ -98,7 +106,7 @@ export class KpiController {
     let userAuthenticated = request['user'];
     applyRbac(userAuthenticated, 'kpi_find_one');
 
-    return this.kpiService.findOne(+id);
+    return this.kpiService.findOne(+id, userAuthenticated);
   }
 
   @Patch('fill-objective-activity/:activityId')

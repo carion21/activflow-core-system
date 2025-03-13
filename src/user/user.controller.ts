@@ -68,6 +68,14 @@ export class UserController {
     return this.userService.findAll(userAuthenticated, paginationDto);
   }
 
+  @Get('reset-password/:id')
+  resetPassword(@Param('id') id: string, @Req() request: Request) {
+    let userAuthenticated = request['user'];
+    applyRbac(userAuthenticated, 'user_reset_password');
+
+    return this.userService.resetPassword(+id, userAuthenticated);
+  }
+
   @Get('me')
   findMe(@Req() request: Request) {
     let userAuthenticated = request['user'];

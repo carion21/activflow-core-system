@@ -10,6 +10,10 @@ export class UpdateSettingDto {
     @IsString()
     readonly companyName: string;
 
+    @IsNotEmpty()
+    @IsString()
+    readonly companyEmail: string;
+
     @IsString()
     readonly companyLogo: string;
 }

@@ -9,6 +9,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { controlData, generateUuid, translate } from 'src/common/functions';
 import { Consts } from 'src/common/constants';
 import { ShowDataForAdminDto } from './dto/show-data-for-admin.dto';
+import { ShowDataForRunnerDto } from './dto/show-data-for-runner.dto';
+import { isDate } from 'moment';
 
 @Injectable()
 export class StoreService {
@@ -119,7 +121,7 @@ export class StoreService {
       mapSelectValues: mapSelectValues,
     };
     console.log('inputs', inputs);
-    
+
     const bcontrol = controlData(inputs);
     if (!bcontrol.success)
       throw new BadRequestException(translate(bcontrol.message));
@@ -480,6 +482,141 @@ export class StoreService {
     //   });
     //   return acc;
     // }, {});
+
+    // return the response
+    return {
+      message: translate('Données récupérées avec succès'),
+      data: data,
+    };
+  }
+
+  async showForRunner(
+    showDataForRunnerDto: ShowDataForRunnerDto,
+    userAuthenticated: any,
+  ) {
+    const { activityId, startDate, endDate } = showDataForRunnerDto;
+
+    // Vérifier les dates
+    if (!isDate(new Date(startDate)))
+      throw new BadRequestException(translate('Date de début invalide'));
+    if (!isDate(new Date(endDate)))
+      throw new BadRequestException(translate('Date de fin invalide'));
+    if (new Date(startDate) > new Date(endDate))
+      throw new BadRequestException(
+        translate('La date de début doit être inférieure à la date de fin'),
+      );
+
+    // Récupérer l'activité et vérifier son existence
+    const activity = await this.prismaService.activity.findFirst({
+      where: {
+        id: activityId,
+      },
+      include: {
+        teams: {
+          select: {
+            teamId: true,
+            team: {
+              select: {
+                id: true,
+                isDeleted: true,
+                users: {
+                  select: {
+                    userId: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        form: {
+          include: {
+            fields: {
+              include: {
+                type: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!activity)
+      throw new NotFoundException(translate('Activité introuvable'));
+
+    // where isDeleted = false
+    let teams = activity.teams.map((team) => team.team);
+    teams = teams.filter((team) => !team.isDeleted);
+
+    const teamUserIds = teams
+      .map((team) => team.users.map((user) => user.userId))
+      .flat();
+
+    // Récupérer les données en fonction des permissions et filtrer si sessionUuid est présent
+    const dataRows = await this.prismaService.dataRow.findMany({
+      where: {
+        fieldId: { in: activity.form.fields.map((field) => field.id) },
+        userId: { in: teamUserIds },
+        createdAt: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        sessionUuid: true,
+        fieldId: true,
+        value: true,
+        createdAt: true,
+        field: {
+          select: {
+            label: true,
+            type: {
+              select: {
+                value: true,
+              },
+            },
+            slug: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            isActive: true,
+            profile: {
+              select: {
+                label: true,
+                value: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let sessionUniques = Array.from(
+      new Set(dataRows.map((row) => row.sessionUuid)),
+    );
+    let data = sessionUniques.map((sessionUuid) => {
+      let rows = dataRows.filter((row) => row.sessionUuid === sessionUuid);
+      let obj = {
+        sessionUuid: sessionUuid,
+        createdAt: rows[0].createdAt,
+        user: rows[0].user,
+        fields: [],
+      };
+      rows.forEach((row) => {
+        obj.fields.push({
+          label: row.field.label,
+          type: row.field.type.value,
+          slug: row.field.slug,
+          value: row.value,
+        });
+      });
+      return obj;
+    });
 
     // return the response
     return {

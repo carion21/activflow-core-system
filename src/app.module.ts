@@ -15,6 +15,8 @@ import { MinioModule } from './minio/minio.module';
 import { StoreModule } from './store/store.module';
 import { AreaModule } from './area/area.module';
 import { SettingModule } from './setting/setting.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { SettingModule } from './setting/setting.module';
     StoreModule,
     AreaModule,
     SettingModule,
+    DashboardModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -32,6 +32,7 @@ model Setting {
   id           Int      @id @default(autoincrement())
   primaryColor String   @db.VarChar(255)
   companyName  String   @db.VarChar(255)
+  companyEmail String   @default("") @db.VarChar(255)
   companyLogo  String   @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -52,29 +53,31 @@ model Profile {
 
 // Utilisateur
 model User {
-  id               Int                @id @default(autoincrement())
-  code             String             @unique @db.VarChar(255)
-  lastname         String             @db.VarChar(255)
-  firstname        String             @db.VarChar(255)
-  email            String             @unique @db.VarChar(255)
-  phone            String?            @db.VarChar(255)
-  password         String             @db.Text
-  isActive         Boolean            @default(true)
-  isDeleted        Boolean            @default(false)
-  isNeedChangePass Boolean            @default(false)
-  profilePicture   String?            @db.Text
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  deletedAt        DateTime?          @db.DateTime
-  profileId        Int
-  profile          Profile            @relation(fields: [profileId], references: [id])
-  userLoginHistory UserLoginHistory[]
-  logs             UserLog[]
-  teams            TeamUser[]
-  dataRows         DataRow[]
-  kpis             UserKpi[]
-  activities       ActivityUser[]
-  reports          Report[]
+  id                Int                @id @default(autoincrement())
+  code              String             @unique @db.VarChar(255)
+  lastname          String             @db.VarChar(255)
+  firstname         String             @db.VarChar(255)
+  email             String             @unique @db.VarChar(255)
+  phone             String?            @db.VarChar(255)
+  password          String             @db.Text
+  isActive          Boolean            @default(true)
+  isDeleted         Boolean            @default(false)
+  isNeedChangePass  Boolean            @default(false)
+  resetPasswordCode String?            @db.VarChar(255)
+  expiredAt         DateTime?          @db.DateTime
+  profilePicture    String?            @db.Text
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?          @db.DateTime
+  profileId         Int
+  profile           Profile            @relation(fields: [profileId], references: [id])
+  userLoginHistory  UserLoginHistory[]
+  logs              UserLog[]
+  teams             TeamUser[]
+  dataRows          DataRow[]
+  kpis              UserKpi[]
+  activities        ActivityUser[]
+  reports           Report[]
 }
 
 // Historique de connexion
@@ -101,8 +104,10 @@ model Report {
   startDate   DateTime
   endDate     DateTime
   delivered   Boolean   @default(false)
+  filename    String?   @db.Text
   activityId  Int
   creatorId   Int
+  createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deliveredAt DateTime?
   activity    Activity  @relation(fields: [activityId], references: [id])

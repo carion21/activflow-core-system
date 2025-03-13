@@ -1,4 +1,17 @@
 -- CreateTable
+CREATE TABLE `Setting` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `primaryColor` VARCHAR(255) NOT NULL,
+    `companyName` VARCHAR(255) NOT NULL,
+    `companyEmail` VARCHAR(255) NOT NULL DEFAULT '',
+    `companyLogo` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Profile` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `code` VARCHAR(255) NOT NULL,
@@ -24,6 +37,8 @@ CREATE TABLE `User` (
     `isActive` BOOLEAN NOT NULL DEFAULT true,
     `isDeleted` BOOLEAN NOT NULL DEFAULT false,
     `isNeedChangePass` BOOLEAN NOT NULL DEFAULT false,
+    `resetPasswordCode` VARCHAR(255) NULL,
+    `expiredAt` DATETIME NULL,
     `profilePicture` TEXT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -52,6 +67,24 @@ CREATE TABLE `UserLog` (
     `action` VARCHAR(255) NOT NULL,
     `date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Report` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `code` VARCHAR(255) NOT NULL,
+    `startDate` DATETIME(3) NOT NULL,
+    `endDate` DATETIME(3) NOT NULL,
+    `delivered` BOOLEAN NOT NULL DEFAULT false,
+    `filename` TEXT NULL,
+    `activityId` INTEGER NOT NULL,
+    `creatorId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deliveredAt` DATETIME(3) NULL,
+
+    UNIQUE INDEX `Report_code_key`(`code`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -113,6 +146,18 @@ CREATE TABLE `Kpi` (
     `deletedAt` DATETIME NULL,
 
     UNIQUE INDEX `Kpi_code_key`(`code`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ObjectiveResultLink` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `objectiveId` INTEGER NOT NULL,
+    `resultId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `ObjectiveResultLink_objectiveId_resultId_key`(`objectiveId`, `resultId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -188,6 +233,17 @@ CREATE TABLE `Activity` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `ActivityUser` (
+    `activityId` INTEGER NOT NULL,
+    `userId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `ActivityUser_activityId_userId_key`(`activityId`, `userId`),
+    PRIMARY KEY (`activityId`, `userId`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `ActivityTeam` (
     `activityId` INTEGER NOT NULL,
     `teamId` INTEGER NOT NULL,
@@ -214,10 +270,10 @@ CREATE TABLE `ActivityTeamArea` (
 CREATE TABLE `Area` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `code` VARCHAR(255) NOT NULL,
-    `label` VARCHAR(255) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
     `value` VARCHAR(255) NOT NULL,
     `description` TEXT NULL,
-    `status` BOOLEAN NOT NULL DEFAULT true,
+    `isActive` BOOLEAN NOT NULL DEFAULT true,
     `isDeleted` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -330,6 +386,12 @@ ALTER TABLE `UserLoginHistory` ADD CONSTRAINT `UserLoginHistory_userId_fkey` FOR
 ALTER TABLE `UserLog` ADD CONSTRAINT `UserLog_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Report` ADD CONSTRAINT `Report_activityId_fkey` FOREIGN KEY (`activityId`) REFERENCES `Activity`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Report` ADD CONSTRAINT `Report_creatorId_fkey` FOREIGN KEY (`creatorId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `TeamUser` ADD CONSTRAINT `TeamUser_teamId_fkey` FOREIGN KEY (`teamId`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -340,6 +402,12 @@ ALTER TABLE `KpiThreshold` ADD CONSTRAINT `KpiThreshold_kpiId_fkey` FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE `Kpi` ADD CONSTRAINT `Kpi_activityId_fkey` FOREIGN KEY (`activityId`) REFERENCES `Activity`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ObjectiveResultLink` ADD CONSTRAINT `ObjectiveResultLink_objectiveId_fkey` FOREIGN KEY (`objectiveId`) REFERENCES `Kpi`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ObjectiveResultLink` ADD CONSTRAINT `ObjectiveResultLink_resultId_fkey` FOREIGN KEY (`resultId`) REFERENCES `Kpi`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `UserKpi` ADD CONSTRAINT `UserKpi_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -364,6 +432,12 @@ ALTER TABLE `Activity` ADD CONSTRAINT `Activity_formId_fkey` FOREIGN KEY (`formI
 
 -- AddForeignKey
 ALTER TABLE `Activity` ADD CONSTRAINT `Activity_activityTypeId_fkey` FOREIGN KEY (`activityTypeId`) REFERENCES `ActivityType`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ActivityUser` ADD CONSTRAINT `ActivityUser_activityId_fkey` FOREIGN KEY (`activityId`) REFERENCES `Activity`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ActivityUser` ADD CONSTRAINT `ActivityUser_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `ActivityTeam` ADD CONSTRAINT `ActivityTeam_activityId_fkey` FOREIGN KEY (`activityId`) REFERENCES `Activity`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
