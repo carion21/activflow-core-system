@@ -68,7 +68,7 @@ async function main() {
     let password = '';
     if (user['role'] === 'admin') {
       password =
-        configService.get<string>('DEFAULT_ADMIN_PASSWORD') || 'password123';
+        configService.get<string>('DEFAULT_ADMINER_PASSWORD') || 'password123';
     }
     if (user['role'] === 'runner') {
       password =

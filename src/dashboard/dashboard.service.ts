@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Consts } from 'src/common/constants';
 import { translate } from 'src/common/functions';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -40,6 +41,11 @@ export class DashboardService {
     const userCount = await this.prismaService.user.count({
       where: {
         isDeleted: false,
+        profile: {
+          value: {
+            notIn: [Consts.VIEWER_PROFILE],
+          },
+        },
       },
     });
 
