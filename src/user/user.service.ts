@@ -37,8 +37,8 @@ export class UserService {
   async create(createUserDto: CreateUserDto, userAuthenticated: object) {
     const { role, lastname, firstname, email, phone } = createUserDto;
 
-    // const tempPassword = generatePassword();
-    const tempPassword = 'password123';
+    const tempPassword = generatePassword();
+    // const tempPassword = 'password123';
     const emailExists = await this.prismaService.user.findFirst({
       where: {
         email,
@@ -64,8 +64,8 @@ export class UserService {
         email,
         phone,
         password: hashedPassword,
-        // isNeedChangePass: true,
-        isNeedChangePass: false,
+        isNeedChangePass: true,
+        // isNeedChangePass: false,
       },
     });
     if (!user)
