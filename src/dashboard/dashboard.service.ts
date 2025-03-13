@@ -43,7 +43,7 @@ export class DashboardService {
         isDeleted: false,
         profile: {
           value: {
-            notIn: [Consts.VIEWER_PROFILE],
+            notIn: [Consts.RUNNER_PROFILE],
           },
         },
       },
