@@ -1,5 +1,5 @@
 import * as randomstring from 'randomstring';
-import moment from 'moment';
+import * as moment from 'moment';
 import { Consts } from './constants';
 import {
   InternalServerErrorException,
