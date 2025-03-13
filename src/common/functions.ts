@@ -1,5 +1,5 @@
 import * as randomstring from 'randomstring';
-import * as moment from 'moment';
+import moment from 'moment';
 import { Consts } from './constants';
 import {
   InternalServerErrorException,
@@ -10,6 +10,7 @@ import axios from 'axios';
 // import * as slug from 'slug';
 import slug from 'slug';
 import { v4 as uuidv4 } from 'uuid';
+import slugify from 'slugify';
 import {
   isBoolean,
   isEmail,
@@ -24,7 +25,14 @@ import { User } from 'src/entities/user.entity';
 const https = require('https');
 
 const getSlug = (text: string) => {
-  return slug(text, {
+  // with slug
+  // return slug(text, {
+  //   lower: true,
+  //   locale: 'fr',
+  // });
+
+  // with slugify
+  return slugify(text, {
     lower: true,
     locale: 'fr',
   });
